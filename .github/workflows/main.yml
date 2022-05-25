@@ -39,5 +39,5 @@ jobs:
             
             echo "::set-output name=push::true"
           fi
-        shell: bash
+      
 
