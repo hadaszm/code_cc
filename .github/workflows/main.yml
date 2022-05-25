@@ -34,11 +34,10 @@ jobs:
           if [-z "$(git status --porcelain)"]; then
             echo "::set-output name=push::false"
           else
-            git commit -m "Add zips" -a
+            git commit -m "Add changes" -a
             git push -f
             
             echo "::set-output name=push::true"
           fi
         shell: bash
-
 
