@@ -8,10 +8,10 @@ Parameters:
     Default: hadaszm
   RepoName:
     Type: String
-    Default: 'test_repo' 
+    Default: 'code_cc' 
   RepoBranch:
     Type: String
-    Default: 'code_cc'
+    Default: 'main'
   BucketsStackName:
     Type: String
     Default: 'BucketsStack'
