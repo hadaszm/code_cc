@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "template description"
+
+Parameters:
+  BucketsStackName:
+    Type: String
+    Default: 'BucketsStack'
+  LambdasRole:
+    Type: String
+    Default: arn:aws:iam::980494704750:role/LabRole
+  DynamoDbTable:
+    Type: String
+    Default: CelebRequests
+  ReportTopicName:
+    Type: String
+    Default: CelebReportTopicName
+
+Resources:
+  
+  # topic
+  ReportTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref ReportTopicName
+      
+
+  # dynamoDb
+  CelebRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DynamoDbTable
+      AttributeDefinitions:
+      - AttributeName: RequestId
+        AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      KeySchema:
+      - AttributeName: RequestId
+        KeyType: HASH
+
+  # lambdas
+  CorsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: cors_lambda.zip
+      FunctionName: CorsLambda
+      Handler: cors_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  RekognitionLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: rekognition_lambda.zip
+      FunctionName: RekognitionLambda
+      Handler: rekognition_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9
+      Timeout: 10
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  SaveResultsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: save_results_lambda.zip
+      FunctionName: SaveResultsLambda
+      Handler: save_results_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9   
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  DeleteCelebLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: delete_celeb_lambda.zip
+      FunctionName: DeleteCelebLambda
+      Handler: delete_celeb_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9   
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  SubscribeReportsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: subscribe_reports_lambda.zip
+      FunctionName: SubscribeReportsLambda
+      Handler: subscribe_reports_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9   
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  SendReportLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: send_report_lambda.zip
+      FunctionName: SendReportLambda
+      Handler: send_report_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9   
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  GetCelebsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: 
+          Fn::ImportValue:
+            !Sub "${BucketsStackName}-CodeBucketName"
+        S3Key: get_celebs_lambda.zip
+      FunctionName: GetCelebsLambda
+      Handler: get_celebs_lambda.handler
+      Role: !Ref LambdasRole
+      Runtime: python3.9   
+      Environment:
+        Variables:
+          awsRegion: !Ref 'AWS::Region'
+
+  # event bridge
+  SendReportRule: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "Rule to send reports every 10 minutes."
+      ScheduleExpression: "rate(10 minutes)"
+      State: "ENABLED"
+      Targets: 
+        - Arn: 
+            Fn::GetAtt: 
+              - SendReportLambda
+              - "Arn"
+          Id: "TargetSendReportLambdaV1"
+
+  # event bridge permissions
+  PermissionForEventsToInvokeLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref SendReportLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: 
+        Fn::GetAtt: 
+          - SendReportRule
+          - "Arn"
+
+  # parameters
+  DynamoDbTableSSMParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /params/dynamoDbTable
+      Type: String
+      Value: !Ref DynamoDbTable
+
+  ReportTopicArnSSMParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /params/reportTopicArn
+      Type: String
+      Value: !Ref ReportTopic
+
+
+Outputs:
+  CorsLambdaArn:
+    Value: !GetAtt CorsLambda.Arn
+    Description: Arn of CorsLambda.
+    Export:
+      Name: !Sub "${AWS::StackName}-CorsLambdaArn"
+
+  RekognitionLambdaArn:
+    Value: !GetAtt RekognitionLambda.Arn
+    Description: Arn of RekognitionLambda.
+    Export:
+      Name: !Sub "${AWS::StackName}-RekognitionLambdaArn"
+
+  DeleteCelebLambdaArn:
+    Value: !GetAtt DeleteCelebLambda.Arn
+    Description: Arn of DeleteCelebLambda.
+    Export:
+      Name: !Sub "${AWS::StackName}-DeleteCelebLambdaArn"
+
+  SubscribeReportsLambdaArn:
+    Value: !GetAtt SubscribeReportsLambda.Arn
+    Description: Arn of SubscribeReportsLambda.
+    Export:
+      Name: !Sub "${AWS::StackName}-SubscribeReportsLambdaArn"
+
+  GetCelebsLambdaArn:
+    Value: !GetAtt GetCelebsLambda.Arn
+    Description: Arn of GetCelebsLambda.
+    Export:
+      Name: !Sub "${AWS::StackName}-GetCelebsLambdaArn"

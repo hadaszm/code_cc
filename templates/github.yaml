@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+# *** Change this to something useful for you!
+Description: template for creating pipelines
+
+Parameters:
+  RepoOwner:
+    Type: String
+    Default: hadaszm
+  RepoName:
+    Type: String
+    Default: 'test_repo' 
+  RepoBranch:
+    Type: String
+    Default: 'code_cc'
+  BucketsStackName:
+    Type: String
+    Default: 'BucketsStack'
+  LambdasStackName:
+    Type: String
+    Default: 'LambdasStack'
+  ApiGatewayStackName:
+    Type: String
+    Default: 'ApiGatewayStack'
+  PipelineRole:
+    Type: String
+    Default: arn:aws:iam::980494704750:role/LabRole
+  OAuthToken:
+    Type: String
+    Default: '{{resolve:secretsmanager:MyGitHubSecret:SecretString:token}}'
+
+Resources:
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      RestartExecutionOnUpdate: true
+      RoleArn: !Ref PipelineRole
+      Stages:
+      - Name: Source
+        Actions:
+        - Name: Source
+          InputArtifacts: []
+          ActionTypeId:
+            Category: Source
+            Owner: ThirdParty
+            Version: 1
+            Provider: GitHub
+          OutputArtifacts:
+          - Name: SourceCode
+          Configuration:
+            Owner: !Ref RepoOwner
+            Repo: !Ref RepoName
+            Branch: !Ref RepoBranch
+            PollForSourceChanges: false
+            OAuthToken: !Ref OAuthToken
+          RunOrder: 1
+      - Name: BucketDeploy
+        Actions:
+        - Name: BucketDeploy
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: '1'
+          InputArtifacts:
+            - Name: SourceCode
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !Ref PipelineRole
+            StackName: !Ref BucketsStackName
+            TemplatePath: !Sub "SourceCode::templates/buckets.yaml"
+      - Name: LambdaDeploy
+        Actions:
+        - Name: LambdaDeploy
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: '1'
+          InputArtifacts:
+            - Name: SourceCode
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !Ref PipelineRole
+            StackName: !Ref LambdasStackName
+            TemplatePath: !Sub "SourceCode::templates/lambdas.yaml"
+      - Name: ApiGatewayDeploy
+        Actions:
+        - Name: ApiGatewayDeploy
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: '1'
+          InputArtifacts:
+            - Name: SourceCode
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !Ref PipelineRole
+            StackName: !Ref ApiGatewayStackName
+            TemplatePath: !Sub "SourceCode::templates/api_gateway.yaml"
+          RunOrder: 1     
+
+
+  GithubWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref OAuthToken
+      RegisterWithThirdParty: 'true'
+      Filters:
+      - JsonPath: "$.ref"
+        MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref CodePipeline
+      TargetAction: Source
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+
+

@@ -1,0 +1,357 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "template description"
+
+Parameters:
+  LambdasStackName:
+    Type: String
+    Default: 'LambdasStack'
+
+Resources:
+  SystemAPI:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: SystemApi
+      ProtocolType: HTTP
+
+  APIStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: $default
+      ApiId: !Ref SystemAPI
+      AutoDeploy: true
+
+  # RekognitionLambda
+  RekognitionLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: 
+      ApiId: !Ref SystemAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - Fn::ImportValue:
+              !Sub "${LambdasStackName}-RekognitionLambdaArn"
+          - /invocations
+      PayloadFormatVersion: '2.0'
+      
+  RekognitionLambdaRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'POST /celebrecog'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref RekognitionLambdaIntegration
+
+  RekognitionLambdaInvokePerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-RekognitionLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/celebrecog'
+
+  # DeleteCelebLambda
+  DeleteCelebLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: 
+      ApiId: !Ref SystemAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - Fn::ImportValue:
+              !Sub "${LambdasStackName}-DeleteCelebLambdaArn"
+          - /invocations
+      PayloadFormatVersion: '2.0'
+      
+  DeleteCelebLambdaRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'DELETE /deleteceleb'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref DeleteCelebLambdaIntegration
+
+  DeleteCelebLambdaInvokePerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-DeleteCelebLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/deleteceleb'
+
+  # SubscribeReportsLambda
+  SubscribeReportsLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: 
+      ApiId: !Ref SystemAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - Fn::ImportValue:
+              !Sub "${LambdasStackName}-SubscribeReportsLambdaArn"
+          - /invocations
+      PayloadFormatVersion: '2.0'
+      
+  SubscribeReportsLambdaRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'POST /subscribe'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref SubscribeReportsLambdaIntegration
+
+  SubscribeReportsLambdaInvokePerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-SubscribeReportsLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/subscribe'
+
+  # GetCelebsLambda
+  GetCelebsLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: 
+      ApiId: !Ref SystemAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - Fn::ImportValue:
+              !Sub "${LambdasStackName}-GetCelebsLambdaArn"
+          - /invocations
+      PayloadFormatVersion: '2.0'
+      
+  GetCelebsLambdaRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'GET /getcelebs'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref GetCelebsLambdaIntegration
+
+  GetCelebsLambdaInvokePerms:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-GetCelebsLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/getcelebs'
+
+
+  # CorsLambda
+  CorsLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: 
+      ApiId: !Ref SystemAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - Fn::ImportValue:
+              !Sub "${LambdasStackName}-CorsLambdaArn"
+          - /invocations
+      PayloadFormatVersion: '2.0'
+      
+  CorsLambdaRouteCelebrecog:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'OPTIONS /celebrecog'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CorsLambdaIntegration
+
+  CorsLambdaRouteDeleteceleb:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'OPTIONS /deleteceleb'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CorsLambdaIntegration
+
+  CorsLambdaRouteSubscribe:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'OPTIONS /subscribe'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CorsLambdaIntegration
+
+  CorsLambdaRouteGetCelebs:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref SystemAPI
+      RouteKey: 'OPTIONS /getcelebs'
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CorsLambdaIntegration
+
+  CorsLambdaInvokePermsCelebrecog:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-CorsLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/celebrecog'
+
+  CorsLambdaInvokePermsDeleteceleb:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-CorsLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/deleteceleb'
+
+  CorsLambdaInvokePermsSubscribe:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-CorsLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/subscribe'
+
+  CorsLambdaInvokePermsGetCelebs:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - APIStage
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName: 
+        Fn::ImportValue:
+          !Sub "${LambdasStackName}-CorsLambdaArn"
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref SystemAPI
+          - '/*/*/getcelebs'
