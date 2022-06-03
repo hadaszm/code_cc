@@ -2,7 +2,7 @@ from zipfile import ZipFile
 import os
 
 os.makedirs('zips', exist_ok=True)
-os.chdir('code')
+os.chdir('our_code')
 for f in os.listdir():
     file = f.split('.')
     
