@@ -2,6 +2,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import os
 
+from sympy import FU
+
 def handler(event, context):
 
     try: 

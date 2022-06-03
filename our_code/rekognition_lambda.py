@@ -10,7 +10,9 @@ def handler(event, context):
 
     try:
         
-        photo = json.loads(event['body'])["base64img"]
+        photo = json.loads(event['body'])
+        photo = photo["base64img"]
+
         
         # environment and ssm params
         FUNCTION_REGION = os.environ['awsRegion']
