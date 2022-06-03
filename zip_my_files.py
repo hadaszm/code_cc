@@ -6,7 +6,7 @@ os.chdir('our_code')
 for f in os.listdir():
     file = f.split('.')
     
-    if file[1] == 'py':
+    if len(file)>1 and file[1] == 'py':
         try:
             zf = ZipFile(os.path.join('..','zips', f'{file[0]}.zip'), mode='w')
             zf.write(f)
