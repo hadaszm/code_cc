@@ -7,12 +7,15 @@ from datetime import datetime
 import os
 
 def handler(event, context):
+    
+    # get allowed origin 
+    cf_client = boto3.client('cloudformation')
+    stack_outputs = cf_client.describe_stacks(StackName='BucketsStack')['Stacks'][0]['Outputs']
+    frontend_host = next(out for out in stack_outputs if out['OutputKey']=='WebsiteURL')['OutputValue']
 
     try:
-        
-        photo = json.loads(event['body'])
-        photo = photo["base64img"]
-
+            
+        photo = json.loads(event['body'])["base64img"]
         
         # environment and ssm params
         FUNCTION_REGION = os.environ['awsRegion']
@@ -21,7 +24,7 @@ def handler(event, context):
         request_id = str(uuid.uuid4())
         request_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     
-        # recognize celeb
+        # recognize
         try:
             client=boto3.client('rekognition')
             imgdata = base64.b64decode(str(photo))
@@ -56,7 +59,7 @@ def handler(event, context):
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Headers': 'accept,accept-encoding,accept-language,access-control-request-method,connection,host,origin,sec-fetch-dest,sec-fetch-mode,sec-fetch-site,user-agent,content-type',
-                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': frontend_host,
                 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,DELETE'
             },
             'body': json.dumps(response_body)
@@ -69,7 +72,7 @@ def handler(event, context):
             'statusCode': 500,
             'headers': {
                 'Access-Control-Allow-Headers': 'accept,accept-encoding,accept-language,access-control-request-method,connection,host,origin,sec-fetch-dest,sec-fetch-mode,sec-fetch-site,user-agent,content-type',
-                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': frontend_host,
                 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,DELETE'
             },
             'body': "Internal server error encountered"

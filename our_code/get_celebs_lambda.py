@@ -4,7 +4,12 @@ from datetime import datetime
 import json
 
 def handler(event, context):
-
+    
+    # get allowed origin 
+    cf_client = boto3.client('cloudformation')
+    stack_outputs = cf_client.describe_stacks(StackName='BucketsStack')['Stacks'][0]['Outputs']
+    frontend_host = next(out for out in stack_outputs if out['OutputKey']=='WebsiteURL')['OutputValue']
+    
     try:
         # environment and ssm variables    
         FUNCTION_REGION = os.environ['awsRegion']
@@ -29,7 +34,7 @@ def handler(event, context):
             'statusCode': 200,
             'headers': {
                     'Access-Control-Allow-Headers': 'accept,accept-encoding,accept-language,access-control-request-method,connection,host,origin,sec-fetch-dest,sec-fetch-mode,sec-fetch-site,user-agent,content-type',
-                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Origin': frontend_host,
                     'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,DELETE'
                 },
             'body': json.dumps(found_celebs_counts)
@@ -42,7 +47,7 @@ def handler(event, context):
             'statusCode': 500,
             'headers': {
                 'Access-Control-Allow-Headers': 'accept,accept-encoding,accept-language,access-control-request-method,connection,host,origin,sec-fetch-dest,sec-fetch-mode,sec-fetch-site,user-agent,content-type',
-                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': frontend_host,
                 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,DELETE'
             },
             'body': "Internal server error encountered"
