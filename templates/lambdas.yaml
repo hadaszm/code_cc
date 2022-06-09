@@ -68,7 +68,7 @@ Resources:
       Handler: rekognition_lambda.handler
       Role: !Ref LambdasRole
       Runtime: python3.9
-      Timeout: 10
+      Timeout: 12
       Environment:
         Variables:
           awsRegion: !Ref 'AWS::Region'
