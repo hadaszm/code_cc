@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Celebrities</title>
+        <style>
+            table, th, td {
+                border: 1px solid black;
+            }
+            th, td {
+                padding: 0.5em;
+            }
+        </style>
+    </head>
+    <body>
+        <button onclick='location.href="index.html"'>Home</button>
+        <h2>All found celebrities</h2>
+        <table id='celebs'>
+            <tr>
+              <th>Name</th>
+              <th>Number of searches</th>
+            </tr>
+        </table>
+    </body>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src='url.js'></script>
+    <script>
+        $(document).ready(function() {
+            $.ajax({
+                url: url + '/getcelebs',
+                type: 'get',
+                success: function(data) {
+                    $.each(JSON.parse(data), function(key, val) {
+                        $('#celebs').append('<tr><td>' + key + '</td><td>' + val + '</td></tr>');
+                    });
+                } 
+            });
+        });
+    </script>
+</html>

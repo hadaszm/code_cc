@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Newsletter sign up</title>
+    </head>
+    <body>
+        <button onclick='location.href="index.html"'>Home</button>
+        <h2>Sign up for the newsletter</h2>
+        <form id='form' action='index.html'>
+            <label for='mail'>Your e-mail address: </label>
+            <input type='email' id='mail' required>
+            <input type='submit'/>
+        </form>
+    </body>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src='url.js'></script>
+    <script>
+        $('#form').submit(function(event) {
+            var mail = $('#mail').val();
+            $.ajax({
+                url: url + '/subscribe',
+                type: 'post',
+                async: false,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                data: JSON.stringify({
+                    'emailAddress': mail
+                }),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function(data) {
+                    alert(data)
+                }
+            });
+        });
+    </script>
+</html>

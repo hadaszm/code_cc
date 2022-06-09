@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Recognize a celebrity</title>
+        <style>
+            img{
+                max-width: 500px;
+                max-height: 500px;
+            }
+        </style>
+    </head>
+    <body>
+        <button onclick='location.href="index.html"'>Home</button>
+        <h2>Recognize a celebrity</h2>
+        <input type='file' onchange='encodeImageFileAsURL(this)' />
+        <p id='image'></p>
+        <p id='result'></p>
+    </body>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src='url.js'></script>
+    <script>
+        function encodeImageFileAsURL(element) {
+            var file = element.files[0];
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                $.ajax({
+                    url: url + '/celebrecog',
+                    type: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    data: JSON.stringify({
+                        'base64img': reader.result.split(',')[1]
+                    }),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(data) {
+                        var s = ''
+                        data['celeb_names'].forEach(element => {
+                            s += '<p>' + element + '</p>'
+                        });
+                        if(data['celeb_names'].length == 0) {
+                            alert('No celebrities were recognized!')
+                        }
+                        $('#image').html('<img src="' + reader.result + '">');
+                        $('#result').html(s);
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</html>

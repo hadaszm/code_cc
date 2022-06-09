@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Delete a celebrity</title>
+    </head>
+    <body>
+        <button onclick='location.href="index.html"'>Home</button>
+        <h2>Delete all requests with a given celebrity from the database</h2>
+        <form id='form' action='index.html'>
+            <label for='celeb'>Celebrity to delete: </label>
+            <input type='text' id='celeb' required>
+            <input type='submit'/>
+        </form>
+    </body>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src='url.js'></script>
+    <script>
+        $('#form').submit(function(event) {
+            var celeb = $('#celeb').val();
+            $.ajax({
+                url: url + '/deleteceleb?celebName=' + celeb,
+                type: 'delete',
+                async: false,
+                success: function(data) {
+                    if(data == 'deleted 0 elements'){
+                        alert(celeb + ' was not found in the database!');
+                    }
+                    else {
+                        alert('You have successfully deleted ' + celeb + ' from the database!');
+                    }
+                } 
+            });
+        });
+    </script>
+</html>

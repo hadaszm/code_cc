@@ -5,10 +5,10 @@ Description: template for creating pipelines
 Parameters:
   RepoOwner:
     Type: String
-    Default: alexnawr
+    Default: hadaszm
   RepoName:
     Type: String
-    Default: 'cc' 
+    Default: 'code_cc' 
   RepoBranch:
     Type: String
     Default: 'main'
@@ -24,6 +24,9 @@ Parameters:
   PipelineRole:
     Type: String
     Default: arn:aws:iam::980494704750:role/LabRole
+  OAuthToken:
+    Type: String
+    Default: '***'
 
 Resources:
   PipelineArtifactsBucket:
@@ -56,9 +59,9 @@ Resources:
             Repo: !Ref RepoName
             Branch: !Ref RepoBranch
             PollForSourceChanges: false
-            OAuthToken: "{{resolve:ssm-secure:GithubToken:0}}"
+            OAuthToken: !Ref OAuthToken
           RunOrder: 1
-      - Name: Deploy
+      - Name: BucketDeploy
         Actions:
         - Name: BucketDeploy
           ActionTypeId:
@@ -74,6 +77,8 @@ Resources:
             RoleArn: !Ref PipelineRole
             StackName: !Ref BucketsStackName
             TemplatePath: !Sub "SourceCode::templates/buckets.yaml"
+      - Name: LambdaDeploy
+        Actions:
         - Name: LambdaDeploy
           ActionTypeId:
             Category: Deploy
@@ -88,6 +93,8 @@ Resources:
             RoleArn: !Ref PipelineRole
             StackName: !Ref LambdasStackName
             TemplatePath: !Sub "SourceCode::templates/lambdas.yaml"
+      - Name: ApiGatewayDeploy
+        Actions:
         - Name: ApiGatewayDeploy
           ActionTypeId:
             Category: Deploy
@@ -110,7 +117,7 @@ Resources:
     Properties:
       Authentication: GITHUB_HMAC
       AuthenticationConfiguration:
-        SecretToken: "{{resolve:ssm-secure:GithubToken:0}}"
+        SecretToken: !Ref OAuthToken
       RegisterWithThirdParty: 'true'
       Filters:
       - JsonPath: "$.ref"
@@ -118,5 +125,3 @@ Resources:
       TargetPipeline: !Ref CodePipeline
       TargetAction: Source
       TargetPipelineVersion: !GetAtt CodePipeline.Version
-
-
