@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 # *** Change this to something useful for you!
-Description: template for creating pipelines
+Description: template describtion
 
 Parameters:
   RepoOwner:
