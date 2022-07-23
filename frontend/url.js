@@ -1,1 +1,1 @@
-var url = '	https://66n4ct6ywb.execute-api.us-east-1.amazonaws.com';
+var url = '';
